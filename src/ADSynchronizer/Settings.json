@@ -1,0 +1,20 @@
+{
+	"Source": {
+		"ConnectionString": "LDAP://ldap.forumsys.com:389/dc=example,dc=com",
+		"UserName": "cn=read-only-admin,dc=example,dc=com",
+		"EncryptedPassword": "password"
+	},
+	"Destination": {
+		"ConnectionString": "LDAP://ldap.forumsys.com:389/dc=example,dc=com"
+	},
+	"ADProperties": [
+		"cn",
+		"mail",
+		"sn",
+		"objectclass",
+		"uid",
+		"adspath"
+	],
+	"Mappings": [
+	]
+}

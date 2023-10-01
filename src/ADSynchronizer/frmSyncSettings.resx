@@ -57,4 +57,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="txtDBConnectionString.Text" xml:space="preserve">
+    <value>Server=tcp:dvausesql001.database.windows.net,1433;Initial Catalog=dev-autoprint-db;User ID=DV-SVC-AUTO01;Password=Aj3J3VhUAMGrQtZKsH2HA23ekHCrBebT;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;</value>
+  </data>
 </root>

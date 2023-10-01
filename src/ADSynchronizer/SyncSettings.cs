@@ -9,9 +9,9 @@ namespace ADSynchronizer
 {
     public class SyncSettings
     {
-        public string SourceConnectionString { get; set; }
-        public string DestinationConnectionString { get; set; }
-
+        public SourceADDetails Source { get; set; }
+        public DestinationDBDetails Destination { get; set; }
+        public List<string> ADProperties { get; set; } = new List<string>();
         public IList<Mapping> Mappings { get; set; } = new List<Mapping>();
 
         public static SyncSettings Deserialize(string syncSettings)
@@ -30,9 +30,21 @@ namespace ADSynchronizer
         }
     }
 
+    public class SourceADDetails
+    {
+        public string ConnectionString { get; set; }
+        public string UserName { get; set; }
+        public string EncryptedPassword { get; set; }
+    }
+
+    public class DestinationDBDetails
+    {
+        public string ConnectionString { get; set; }
+    }
+
     public class Mapping
     {
-        public string Source { get; set; }
-        public string Destination { get; set; }
+        public string SourceField { get; set; }
+        public string DestinationField { get; set; }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using NLog;
 using NLog.Filters;
 using System;
+using System.CodeDom;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.DirectoryServices;
@@ -59,8 +61,7 @@ namespace ADSynchronizer
         {
             try
             {
-                var temp = rootEntry.Guid;
-                return true;
+                return rootEntry.NativeObject != null || rootEntry.Guid != Guid.Empty;
             }
             catch (Exception ex)
             {
@@ -69,37 +70,43 @@ namespace ADSynchronizer
             }
         }
 
-        public static IEnumerable<string> SearchAllProp(string rootServerDns)
+        public static IEnumerable<string> SearchAllProp(string rootServerDns, string? username = null, string? password = null)
         {
-            //var context = new DirectoryContext(DirectoryContextType.Forest, rootServerDns);
+            var context = new DirectoryContext(DirectoryContextType.Forest, rootServerDns);
 
-            //using (var schema = ActiveDirectorySchema.GetSchema(context))
-            //{
-            //    var userClass = schema.FindClass("user");
+            using (var schema = ActiveDirectorySchema.GetSchema(context))
+            {
+                var userClass = schema.FindClass("user");
 
-            //    foreach (ActiveDirectorySchemaProperty property in userClass.GetAllProperties())
-            //    {
-            //        yield return property.Name;
-            //    }
-            //}
-            using (var rootEntry = CreateRootDirectoryEntry(rootServerDns))
+                foreach (ActiveDirectorySchemaProperty property in userClass.GetAllProperties())
+                {
+                    yield return property.Name;
+                }
+            }
+        }
+
+        public static IEnumerable<string> SearchAllPropFromUser(string rootServerDns, string? username = null, string? password = null, string testADUser = null)
+        {
+            using (var rootEntry = CreateRootDirectoryEntry(rootServerDns, username, password))
             {
                 using (var searcher = new DirectorySearcher(rootEntry))
                 {
-                    searcher.Filter = BaseListAllUsersFilter;
+                    //searcher.Filter = BaseListAllUsersFilter;
+                    searcher.Filter = $"(uid={testADUser})";                    
+                    searcher.PropertiesToLoad.Add("*");
 
                     var result = searcher.FindOne();
 
                     if (result != null)
                     {
-                        foreach (var field in result.Properties)
+                        foreach (string field in result.Properties.PropertyNames)
                         {
-                            yield return field.ToString();
+                            yield return field;
                         }
                     }
                     else
-                    {  
-                        MessageBox.Show("Can not connect..null result!");
+                    {
+                        throw new ApplicationException("Search failed, null result!");
                     }
                 }
             }
@@ -217,7 +224,7 @@ namespace ADSynchronizer
 
         private static string BuildLdapUrl(string path)
         {
-            path = LdapCanonicalization.CanonicalizeStringForLdapDN(path);
+            // path = LdapCanonicalization.CanonicalizeStringForLdapDN(path);
             if (path.StartsWith(LdapProtocolBase, StringComparison.CurrentCulture))
                 return path;
             else

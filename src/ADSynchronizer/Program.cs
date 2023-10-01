@@ -32,7 +32,7 @@ namespace ADSynchronizer
 
                     services.AddLogging(option =>
                     {
-                        option.SetMinimumLevel(LogLevel.Information);
+                        option.SetMinimumLevel(LogLevel.Debug);
                         option.AddNLog("nlog.config");
                     });
 
