@@ -209,18 +209,38 @@ namespace ADSynchronizer
             return SearchDirectory(_rootEntry, string.Format(CultureInfo.CurrentCulture, BaseGetUserBySIdFilter, sId)).FirstOrDefault();
         }
 
-        public ImportableUser GetUserBySamAccountName(string samAccountName)
+        public ImportableUser GetUserBySamAccountName(string samAccountName,
+            IList<string> userProperties,
+            Func<SearchResult, ImportableUser> mapAdUser)
         {
             if (string.IsNullOrWhiteSpace(samAccountName)) throw new ArgumentNullException("samAccountName");
+            if (userProperties.Count <= 0) throw new ArgumentException("userProperties");
             if (_disposed) throw new ObjectDisposedException("Root DirectoryEntry is disposed.");
 
             samAccountName = LdapCanonicalization.CanonicalizeStringForLdapFilter(samAccountName);
-            return SearchDirectory(_rootEntry, string.Format(CultureInfo.CurrentCulture, BaseGetUserBySamAccountNameFilter, samAccountName)).FirstOrDefault();
+            var filter = string.Format(CultureInfo.CurrentCulture, BaseGetUserBySamAccountNameFilter, samAccountName);
+            
+            return SearchDirectory(_rootEntry, userProperties, mapAdUser).FirstOrDefault();
         }
 
-        #endregion
+        private static IEnumerable<ImportableUser> SearchDirectory(DirectoryEntry entry, IList<string> userProperties, 
+            Func<SearchResult, ImportableUser> mapAdUser, string? filter = null)
+        {
+            using (var searcher = new DirectorySearcher(entry))
+            {
+                searcher.PropertiesToLoad.Clear();
+                searcher.PropertiesToLoad.AddRange(userProperties.ToArray());
 
-        #region Private Methods
+                if (!string.IsNullOrEmpty(filter))
+                    searcher.Filter = filter;
+
+                var results = searcher.FindAll();
+
+                return results
+                    .Cast<SearchResult>()
+                    .Select(mapAdUser);
+            }
+        }
 
         private static string BuildLdapUrl(string path)
         {

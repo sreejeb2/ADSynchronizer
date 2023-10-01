@@ -242,5 +242,56 @@ namespace ADSynchronizer
                 cmbDBProps.SelectedItem = _settings.Mappings[selectedRow].DestinationField;
             }
         }
+
+        private void btnSyncUser_Click(object sender, EventArgs e)
+        {
+            var adSyncUser = txtSyncUser.Text.Trim();
+
+            if (_settings.Source?.ConnectionString == null)
+            {
+                ShowErrorMessage("Verify AD details");
+                return;
+            }
+            
+            if (_settings.Destination?.ConnectionString == null)
+            {
+                ShowErrorMessage("Verify DB details");
+                return;
+            }
+
+            if (!_settings.Mappings.Any())
+            {
+                ShowErrorMessage("Verify Mappings");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(adSyncUser))
+            {
+                ShowErrorMessage("Specify AD user sam account name");
+                return;
+            }
+
+            var sourceADProps = _settings.Mappings.Select(m => m.SourceField).ToList();
+            Func<SearchResult, ImportableUser> mapADUser = result => {
+                return new ImportableUser
+                {
+                    DistiguishedName = _settings.Mappings.Any(m => m.DestinationField == "DistiguishedName") ?
+                    result.Properties[_settings.Mappings.First(m => m.DestinationField == "DistiguishedName").SourceField][0].ToString()
+                    : null,
+                };
+            };
+
+            try
+            {
+                using var ad = new ActiveDirectoryUtility(_settings.Source.ConnectionString, _settings.Source.UserName, _settings.Source.EncryptedPassword);
+                var user = ad.GetUserBySamAccountName(adSyncUser, sourceADProps, mapADUser);
+
+                ShowSuccessfulMessage($"Got {user.DistiguishedName}");
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage(ex.ToString());    
+            }
+        }
     }
 }

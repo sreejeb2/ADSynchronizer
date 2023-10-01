@@ -46,6 +46,10 @@
             this.txtUserName = new System.Windows.Forms.TextBox();
             this.btnTestADConnection = new System.Windows.Forms.Button();
             this.tabMapping = new System.Windows.Forms.TabPage();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label8 = new System.Windows.Forms.Label();
+            this.btnSyncUser = new System.Windows.Forms.Button();
+            this.txtSyncUser = new System.Windows.Forms.TextBox();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.btnDeleteMapping = new System.Windows.Forms.Button();
@@ -60,13 +64,14 @@
             this.gridMap = new System.Windows.Forms.DataGridView();
             this.Source = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Destination = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.tabVerify = new System.Windows.Forms.TabPage();
+            this.tabSync = new System.Windows.Forms.TabPage();
             this.tabReport = new System.Windows.Forms.TabPage();
             this.tcSync.SuspendLayout();
             this.tabSetup.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.grpSource.SuspendLayout();
             this.tabMapping.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -92,7 +97,7 @@
             this.tcSync.Appearance = System.Windows.Forms.TabAppearance.FlatButtons;
             this.tcSync.Controls.Add(this.tabSetup);
             this.tcSync.Controls.Add(this.tabMapping);
-            this.tcSync.Controls.Add(this.tabVerify);
+            this.tcSync.Controls.Add(this.tabSync);
             this.tcSync.Controls.Add(this.tabReport);
             this.tcSync.Location = new System.Drawing.Point(12, 11);
             this.tcSync.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
@@ -264,6 +269,7 @@
             // 
             // tabMapping
             // 
+            this.tabMapping.Controls.Add(this.groupBox2);
             this.tabMapping.Controls.Add(this.tabControl1);
             this.tabMapping.Controls.Add(this.gridMap);
             this.tabMapping.Location = new System.Drawing.Point(4, 53);
@@ -274,6 +280,46 @@
             this.tabMapping.TabIndex = 1;
             this.tabMapping.Text = "Mapping";
             this.tabMapping.UseVisualStyleBackColor = true;
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.label8);
+            this.groupBox2.Controls.Add(this.btnSyncUser);
+            this.groupBox2.Controls.Add(this.txtSyncUser);
+            this.groupBox2.Location = new System.Drawing.Point(1454, 490);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(924, 382);
+            this.groupBox2.TabIndex = 3;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Verify AD Sync";
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(59, 80);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(195, 41);
+            this.label8.TabIndex = 4;
+            this.label8.Text = "Sync AD User";
+            // 
+            // btnSyncUser
+            // 
+            this.btnSyncUser.Location = new System.Drawing.Point(59, 213);
+            this.btnSyncUser.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.btnSyncUser.Name = "btnSyncUser";
+            this.btnSyncUser.Size = new System.Drawing.Size(248, 76);
+            this.btnSyncUser.TabIndex = 2;
+            this.btnSyncUser.Text = "Sync User";
+            this.btnSyncUser.UseVisualStyleBackColor = true;
+            this.btnSyncUser.Click += new System.EventHandler(this.btnSyncUser_Click);
+            // 
+            // txtSyncUser
+            // 
+            this.txtSyncUser.Location = new System.Drawing.Point(59, 124);
+            this.txtSyncUser.Name = "txtSyncUser";
+            this.txtSyncUser.Size = new System.Drawing.Size(382, 47);
+            this.txtSyncUser.TabIndex = 3;
+            this.txtSyncUser.Text = "riemann";
             // 
             // tabControl1
             // 
@@ -384,9 +430,9 @@
             this.btnADFillUser.Location = new System.Drawing.Point(63, 190);
             this.btnADFillUser.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.btnADFillUser.Name = "btnADFillUser";
-            this.btnADFillUser.Size = new System.Drawing.Size(191, 76);
+            this.btnADFillUser.Size = new System.Drawing.Size(248, 76);
             this.btnADFillUser.TabIndex = 2;
-            this.btnADFillUser.Text = "Sync";
+            this.btnADFillUser.Text = "Sync Properties";
             this.btnADFillUser.UseVisualStyleBackColor = true;
             this.btnADFillUser.Click += new System.EventHandler(this.btnADFillUser_Click);
             // 
@@ -433,15 +479,15 @@
             this.Destination.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.Destination.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
             // 
-            // tabVerify
+            // tabSync
             // 
-            this.tabVerify.Location = new System.Drawing.Point(4, 53);
-            this.tabVerify.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
-            this.tabVerify.Name = "tabVerify";
-            this.tabVerify.Size = new System.Drawing.Size(2440, 990);
-            this.tabVerify.TabIndex = 3;
-            this.tabVerify.Text = "Verify";
-            this.tabVerify.UseVisualStyleBackColor = true;
+            this.tabSync.Location = new System.Drawing.Point(4, 53);
+            this.tabSync.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.tabSync.Name = "tabSync";
+            this.tabSync.Size = new System.Drawing.Size(2440, 990);
+            this.tabSync.TabIndex = 3;
+            this.tabSync.Text = "Synchronization";
+            this.tabSync.UseVisualStyleBackColor = true;
             // 
             // tabReport
             // 
@@ -472,6 +518,8 @@
             this.grpSource.ResumeLayout(false);
             this.grpSource.PerformLayout();
             this.tabMapping.ResumeLayout(false);
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
@@ -500,7 +548,7 @@
         private TabPage tabReport;
         private DataGridView gridMap;
         private Button btnSaveSetup;
-        private TabPage tabVerify;
+        private TabPage tabSync;
         private Label label4;
         private TextBox txtDBConnectionString;
         private Button btnSaveMapping;
@@ -516,5 +564,9 @@
         private TabPage tabPage1;
         private TabPage tabPage2;
         private Button btnDeleteMapping;
+        private GroupBox groupBox2;
+        private Label label8;
+        private TextBox txtSyncUser;
+        private Button btnSyncUser;
     }
 }

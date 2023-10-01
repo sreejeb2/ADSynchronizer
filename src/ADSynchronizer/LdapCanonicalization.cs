@@ -34,7 +34,7 @@ namespace ADSynchronizer
         /// <returns>Canonicalized user input so it can be used in LDAP filter</returns>
         public static string CanonicalizeStringForLdapFilter(string userInput)
         {
-            if (String.IsNullOrEmpty(userInput))
+            if (string.IsNullOrEmpty(userInput))
             {
                 return userInput;
             }
