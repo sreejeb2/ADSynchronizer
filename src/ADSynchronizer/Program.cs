@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using System.CommandLine;
 
 namespace ADSynchronizer
 {
@@ -11,16 +12,36 @@ namespace ADSynchronizer
         ///  The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            
+
             var host = CreateHostBuilder().Build();
             ServiceProvider = host.Services;
 
-            Application.Run(ServiceProvider.GetRequiredService<frmSyncSettings>());
+            if (args.Length > 0)
+            {
+                var fileOption = new Option<FileInfo?>(
+            name: "--file",
+            description: "Full path to the settings.json file.");
+
+                var rootCommand = new RootCommand("Scheduler utility for ADSynchronizer");
+                rootCommand.AddOption(fileOption);
+
+                rootCommand.SetHandler((file) =>
+                {
+                    var scheduler = new Scheduler();
+                    scheduler.Start(file!, ServiceProvider.GetRequiredService<IEncryptionService>());
+                }, fileOption);
+
+                rootCommand.Invoke(args);
+            }
+            else
+            {
+                Application.Run(ServiceProvider.GetRequiredService<frmSyncSettings>());
+            }
         }
 
         public static IServiceProvider ServiceProvider { get; private set; }
@@ -36,6 +57,7 @@ namespace ADSynchronizer
                         option.AddNLog("nlog.config");
                     });
 
+                    services.AddScoped<IEncryptionService, EncryptionService>();
                     services.AddScoped<frmSyncSettings>();
                 });
         }

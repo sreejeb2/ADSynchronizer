@@ -1,41 +1,28 @@
 ﻿using NLog;
 using NLog.Filters;
-using System;
-using System.CodeDom;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using NLog.Fluent;
+using System.Data;
 using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
 using System.Globalization;
-using System.Linq;
+using System.IO;
 using System.Security.Principal;
-using System.Text.RegularExpressions;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace ADSynchronizer
 {
     public class ActiveDirectoryUtility : IDisposable
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger AuditLogger = LogManager.GetLogger("AuditLog");
 
         private const string LdapProtocolBase = "LDAP://";
         private const string BaseGroupFilter = "(&(objectCategory=group)(cn={0}))";
         private const string BaseGroupSidFilter = "(&(objectCategory=group)(objectsid={0}))";
-        private const string BaseListUsersFilter = "(&(objectCategory=person)(objectClass=user)(memberOf={0}))";
         private const string BaseFindUsersFilter = "(&(objectCategory=person)(objectClass=user)(anr={0}))";
-        private const string BaseGetUserFilter = "(&(objectCategory=person)(objectClass=user)(distinguishedName={0}))";
         private const string BaseGetUserBySIdFilter = "(&(objectCategory=person)(objectClass=user)(objectSid={0}))";
-        private const string BaseGetUserBySamAccountNameFilter = "(&(objectCategory=person)(objectClass=user)(samAccountName={0}))";
+        private const string BaseGetUserBySamAccountNameFilter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName={0}))";
+        private const string BaseListUsersFilter = "(&(objectCategory=person)(objectClass=user){0})";
         private const string BaseListAllUsersFilter = "(&(objectCategory=person)(objectClass=user))";
-
-        private const string UserDistiguishedNameProperty = "distinguishedName";
-        private const string UserSidProperty = "objectsid";
-        private const string UserCommonNameProperty = "cn";
-        private const string SamAccountNameProperty = "samAccountName";
-        private const string MailProperty = "mail";
-
-        private static readonly string[] UserProperties = new[] { UserDistiguishedNameProperty, UserSidProperty, UserCommonNameProperty, SamAccountNameProperty, MailProperty };
 
         private bool _disposed;
         private DirectoryEntry _rootEntry;
@@ -65,22 +52,76 @@ namespace ADSynchronizer
             }
             catch (Exception ex)
             {
-                Logger.Error("Could not connect to the specified AD server", ex);
+                Logger.Error(ex, "Could not connect to the specified AD server");
                 return false;
             }
         }
 
-        public static IEnumerable<string> SearchAllProp(string rootServerDns, string? username = null, string? password = null)
+        public static IEnumerable<string> SearchAllProp(string rootServerDns, string? username = null, string? password = null,
+            string? filter = null)
         {
-            var context = new DirectoryContext(DirectoryContextType.Forest, rootServerDns);
-
-            using (var schema = ActiveDirectorySchema.GetSchema(context))
+            using (var rootEntry = CreateRootDirectoryEntry(rootServerDns, username, password))
             {
-                var userClass = schema.FindClass("user");
-
-                foreach (ActiveDirectorySchemaProperty property in userClass.GetAllProperties())
+                using (var searcher = new DirectorySearcher(rootEntry))
                 {
-                    yield return property.Name;
+                    searcher.Filter = GetAllUsersFilter(filter);
+                    searcher.PropertiesToLoad.Add("*");
+
+                    var result = searcher.FindOne();
+
+                    if (result != null)
+                    {
+                        foreach (string field in result.Properties.PropertyNames)
+                        {
+                            yield return field;
+                        }
+                    }
+                    else
+                    {
+                        throw new ApplicationException("Search failed, null result!");
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<string> SearchAllProp(string rootServerDns, string className)
+        {
+            var rootEntry = new DirectoryContext(DirectoryContextType.Forest, rootServerDns);
+
+            using (var searcher = ActiveDirectorySchema.GetSchema(rootEntry))
+            {
+                var result = searcher.FindClass(className);
+
+                if (result != null)
+                {
+                    foreach (ActiveDirectorySchemaProperty field in result.GetAllProperties())
+                    {
+                        yield return field.Name;
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("Search failed, null result!");
+                }
+            }
+        }
+
+        public static IEnumerable<string> SearchAllProp(string className)
+        {
+            using (var searcher = ActiveDirectorySchema.GetCurrentSchema())
+            {
+                var result = searcher.FindClass(className);
+
+                if (result != null)
+                {
+                    foreach (ActiveDirectorySchemaProperty field in result.GetAllProperties())
+                    {
+                        yield return field.Name;
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("Search failed, null result!");
                 }
             }
         }
@@ -91,8 +132,7 @@ namespace ADSynchronizer
             {
                 using (var searcher = new DirectorySearcher(rootEntry))
                 {
-                    //searcher.Filter = BaseListAllUsersFilter;
-                    searcher.Filter = $"(uid={testADUser})";                    
+                    searcher.Filter = string.Format(CultureInfo.CurrentCulture, BaseGetUserBySamAccountNameFilter, testADUser);                   
                     searcher.PropertiesToLoad.Add("*");
 
                     var result = searcher.FindOne();
@@ -114,132 +154,104 @@ namespace ADSynchronizer
 
         private static DirectoryEntry CreateRootDirectoryEntry(string rootServerDns, string? username = null, string? password = null)
         {
+            username = string.IsNullOrEmpty(username) ? null : username;
+            password = string.IsNullOrEmpty(password) ? null : password;
+
             return new DirectoryEntry(BuildLdapUrl(rootServerDns), username, password)
             {
                 AuthenticationType = AuthenticationTypes.ServerBind
             };
         }
-        #endregion
 
-        #region Public Methods
-
-        public string GetActiveDirectoryGroupSid(string groupName)
+        public (DataTable, int) PreviewUsers(IList<Mapping> mappings, int count = 1, string? filter = null)
         {
-            using (var groupSearcher = new DirectorySearcher(_rootEntry) { SearchScope = SearchScope.Subtree })
-            {
-                groupName = LdapCanonicalization.CanonicalizeStringForLdapFilter(groupName.Trim());
-                groupSearcher.Filter = string.Format(CultureInfo.CurrentCulture, BaseGroupFilter, groupName);
-
-                //make sure we have a clean collection
-                groupSearcher.PropertiesToLoad.Clear();
-                groupSearcher.PropertiesToLoad.Add(UserSidProperty);
-
-
-                //find the first search result
-                var results = groupSearcher.FindOne();
-
-                if (results == null) return null;
-
-                var sid = new SecurityIdentifier((byte[])results.Properties[UserSidProperty][0], 0).Value.ToUpper(CultureInfo.CurrentCulture);
-
-                return string.IsNullOrEmpty(sid) ? null : sid;
-
-            }
-        }
-
-        public string GetActiveDirectoryGroupName(string membershipIdentifier)
-        {
-            using (var groupSearcher = new DirectorySearcher(_rootEntry) { SearchScope = SearchScope.Subtree })
-            {
-                membershipIdentifier = LdapCanonicalization.CanonicalizeStringForLdapFilter(membershipIdentifier);
-                groupSearcher.Filter = string.Format(CultureInfo.CurrentCulture, BaseGroupSidFilter, membershipIdentifier);
-
-                //make sure we have a clean collection
-                groupSearcher.PropertiesToLoad.Clear();
-                groupSearcher.PropertiesToLoad.AddRange(UserProperties);
-
-                //find the first search result
-                var results = groupSearcher.FindOne();
-
-                if (results == null) return null;
-
-                var groupName = results.Properties[UserCommonNameProperty][0].ToString();
-
-                return string.IsNullOrEmpty(groupName) ? null : groupName;
-
-            }
-        }
-
-        public IEnumerable<ImportableUser> ListUsersInGroup(string groupName)
-        {
-            if (groupName == null) throw new ArgumentNullException("groupName");
-            if (_disposed) throw new ObjectDisposedException("Root DirectoryEntry is disposed");
-
-            groupName = LdapCanonicalization.CanonicalizeStringForLdapFilter(groupName);
-            var groupDn = GetGroupDn(groupName);
-
-            return string.IsNullOrEmpty(groupDn) ? null : SearchDirectory(_rootEntry, string.Format(CultureInfo.CurrentCulture, BaseListUsersFilter, groupDn));
-
-        }
-
-        public IEnumerable<ImportableUser> FindUsers(string searchString)
-        {
-            if (searchString == null) throw new ArgumentNullException("searchString");
-            if (_disposed) throw new ObjectDisposedException("Root DirectoryEntry is disposed");
-
-            searchString = LdapCanonicalization.CanonicalizeStringForLdapFilter(searchString);
-            return SearchDirectory(_rootEntry, string.Format(CultureInfo.CurrentCulture, BaseFindUsersFilter, searchString));
-        }
-
-        public ImportableUser GetUser(string distinguishedName)
-        {
-            if (distinguishedName == null) throw new ArgumentNullException("distinguishedName");
+            if (mappings.Count <= 0) throw new ArgumentException("mappings");
             if (_disposed) throw new ObjectDisposedException("Root DirectoryEntry is disposed.");
 
-            distinguishedName = LdapCanonicalization.CanonicalizeStringForLdapFilter(distinguishedName);
-            return SearchDirectory(_rootEntry, string.Format(CultureInfo.CurrentCulture, BaseGetUserFilter, distinguishedName)).FirstOrDefault();
+            return SearchDirectory(_rootEntry, mappings, count, filter);
         }
 
-        public ImportableUser GetUserBySId(string sId)
+        public Dictionary<string, Dictionary<string, string>> GetUser(string searchValue, IList<Mapping> mappings, string? filter = null)
         {
-            if (sId == null) throw new ArgumentNullException("sId");
+            if (string.IsNullOrWhiteSpace(searchValue)) throw new ArgumentNullException("searchValue");
+            if (mappings.Count <= 0) throw new ArgumentException("mappings");
             if (_disposed) throw new ObjectDisposedException("Root DirectoryEntry is disposed.");
 
-            sId = LdapCanonicalization.CanonicalizeStringForLdapFilter(sId);
-            return SearchDirectory(_rootEntry, string.Format(CultureInfo.CurrentCulture, BaseGetUserBySIdFilter, sId)).FirstOrDefault();
+            searchValue = LdapCanonicalization.CanonicalizeStringForLdapFilter(searchValue);
+            var primaryKeyMap = mappings.First(m => m.DestinationField == DataAccess.PrimaryKey);
+            var userfilter = $"({primaryKeyMap.SourceField}={searchValue})";
+            var adFilter = string.IsNullOrEmpty(filter) ? userfilter : $"{GetFilteredUsersFilter(filter)}{userfilter}";
+
+            return SearchDirectory(_rootEntry, mappings, adFilter);
         }
 
-        public ImportableUser GetUserBySamAccountName(string samAccountName,
-            IList<string> userProperties,
-            Func<SearchResult, ImportableUser> mapAdUser)
+        public Dictionary<string, Dictionary<string, string>> GetAllUsers(IList<Mapping> mappings, string? filter = null)
         {
-            if (string.IsNullOrWhiteSpace(samAccountName)) throw new ArgumentNullException("samAccountName");
-            if (userProperties.Count <= 0) throw new ArgumentException("userProperties");
+            if (mappings.Count <= 0) throw new ArgumentException("mappings");
             if (_disposed) throw new ObjectDisposedException("Root DirectoryEntry is disposed.");
 
-            samAccountName = LdapCanonicalization.CanonicalizeStringForLdapFilter(samAccountName);
-            var filter = string.Format(CultureInfo.CurrentCulture, BaseGetUserBySamAccountNameFilter, samAccountName);
-            
-            return SearchDirectory(_rootEntry, userProperties, mapAdUser).FirstOrDefault();
+            return SearchDirectory(_rootEntry, mappings, filter);
         }
 
-        private static IEnumerable<ImportableUser> SearchDirectory(DirectoryEntry entry, IList<string> userProperties, 
-            Func<SearchResult, ImportableUser> mapAdUser, string? filter = null)
+        private static Dictionary<string, Dictionary<string, string>> SearchDirectory(DirectoryEntry entry, IList<Mapping> mappings, 
+            string? filter = null)
         {
+            var adProperties = mappings.Select(m => m.SourceField).ToArray();
+            var primaryKeyMap = mappings.First(m => m.DestinationField == DataAccess.PrimaryKey);
+            var results = new Dictionary<string, Dictionary<string, string>>();
+
             using (var searcher = new DirectorySearcher(entry))
             {
                 searcher.PropertiesToLoad.Clear();
-                searcher.PropertiesToLoad.AddRange(userProperties.ToArray());
+                searcher.PropertiesToLoad.AddRange(adProperties);
+                searcher.PageSize = int.MaxValue;
+                searcher.Filter = GetAllUsersFilter(filter);
 
-                if (!string.IsNullOrEmpty(filter))
-                    searcher.Filter = filter;
+                using (SearchResultCollection searchResults = searcher.FindAll())
+                {
+                    AuditLogger.Info($"Got {searchResults.Count} users from AD");
 
-                var results = searcher.FindAll();
+                    foreach (SearchResult searchResult in searchResults)
+                    {                        
+                        try
+                        {
+                            var primaryKeyValue = GetProperty(searchResult, primaryKeyMap.SourceField);
 
-                return results
-                    .Cast<SearchResult>()
-                    .Select(mapAdUser);
+                            if (!string.IsNullOrWhiteSpace(primaryKeyValue))
+                            {
+                                var allPropValues = new Dictionary<string, string>();
+
+                                foreach (var map in mappings)
+                                {
+                                    allPropValues.Add(map.DestinationField, GetProperty(searchResult, map.SourceField));
+                                }
+
+                                results.Add(primaryKeyValue, allPropValues);
+
+                                AuditLogger.Info($"Got user {primaryKeyValue} with {allPropValues.Count} properties from AD");
+                            }
+                            else
+                            {
+                                AuditLogger.Warn($"Got AD search result with empty primary key({DataAccess.PrimaryKey})");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AuditLogger.Error("Exception reading data from AD, will continue");
+                            Logger.Error(ex, "Exception reading data from AD, will continue");
+                        }
+                    }
+                }
+
+                return results;
             }
+        }
+        
+        private static string GetProperty(SearchResult searchResult, string? propertyName)
+        {
+            return !string.IsNullOrEmpty(propertyName) && searchResult.Properties.Contains(propertyName)
+                ? searchResult.Properties[propertyName][0].ToString() ?? ""
+                : string.Empty;
         }
 
         private static string BuildLdapUrl(string path)
@@ -251,58 +263,79 @@ namespace ADSynchronizer
                 return LdapProtocolBase + path;
         }
 
-        private string GetGroupDn(string groupName)
+        private static string GetAllUsersFilter(string? adFilter)
         {
-            using (var groupSearcher = new DirectorySearcher(_rootEntry) { SearchScope = SearchScope.Subtree })
-            {
-                groupName = LdapCanonicalization.CanonicalizeStringForLdapFilter(groupName);
-                groupSearcher.Filter = string.Format(CultureInfo.CurrentCulture, BaseGroupFilter, groupName);
-
-                //make sure we have a clean collection
-                groupSearcher.PropertiesToLoad.Clear();
-                groupSearcher.PropertiesToLoad.Add("distinguishedName");
-
-                //find the first search result
-                var results = groupSearcher.FindOne();
-
-                return results != null ? results.Properties["distinguishedName"][0].ToString() : null;
-            }
+            return string.IsNullOrEmpty(adFilter)
+                ? BaseListAllUsersFilter
+                : GetFilteredUsersFilter(adFilter);
         }
 
-        private static IEnumerable<ImportableUser> SearchDirectory(DirectoryEntry entry, string? filter = null)
+        private static string GetFilteredUsersFilter(string? additionalFilter)
         {
+            if (string.IsNullOrEmpty(additionalFilter))
+                return additionalFilter;
+
+            if (additionalFilter.StartsWith('(') && additionalFilter.EndsWith(')'))
+                return string.Format(BaseListUsersFilter, additionalFilter);
+            else
+                return string.Format(BaseListUsersFilter, $"({additionalFilter})");
+        }
+
+        private static (DataTable, int) SearchDirectory(DirectoryEntry entry, IList<Mapping> mappings, int count, string? filter = null)
+        {
+            var adProperties = mappings.Select(m => m.SourceField).ToArray();
+            var result = new DataTable();
+            var totalResults = 0;
+
             using (var searcher = new DirectorySearcher(entry))
             {
                 searcher.PropertiesToLoad.Clear();
-                searcher.PropertiesToLoad.AddRange(UserProperties);
+                searcher.PropertiesToLoad.AddRange(adProperties);
+                searcher.PageSize = int.MaxValue;
+                searcher.Filter = GetAllUsersFilter(filter);
 
-                if (!string.IsNullOrEmpty(filter))
-                    searcher.Filter = filter;
+                using (SearchResultCollection searchResults = searcher.FindAll())
+                {
+                    int counter = 0;
+                    totalResults = searchResults.Count;
 
-                var results = searcher.FindAll();
+                    foreach (var map in mappings)
+                    {
+                        result.Columns.Add(map.DestinationField);
+                    }
 
-                return results
-                    .Cast<SearchResult>()
-                    .Select(CreateAdUser)
-                    .ToList();
+                    foreach (SearchResult searchResult in searchResults)
+                    {
+                        try
+                        {
+                            if (counter >= count)
+                                break;
+
+                            counter++;
+
+                            result.Rows.Add(GetMappedRow(searchResult, mappings));
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, $"Exception reading for preview, will continue");
+                        }
+                    }
+                }
             }
+
+            return (result, totalResults);
         }
 
-        private static ImportableUser CreateAdUser(SearchResult result)
+        private static object[] GetMappedRow(SearchResult result, IList<Mapping> mappings)
         {
-            return new ImportableUser
+            var row = new object[mappings.Count];
+
+            foreach (var map in mappings.Select((value, i) => new { i, value.SourceField }))
             {
-                DistiguishedName = result.Properties[UserDistiguishedNameProperty][0].ToString(),
-                Sid = ConvertToSidString((byte[])result.Properties[UserSidProperty][0]),
-                DisplayName = result.Properties[UserCommonNameProperty][0].ToString(),
-                SamAccountName = result.Properties[SamAccountNameProperty][0].ToString(),
-                Email = result.Properties[MailProperty].Count > 0 ? result.Properties[MailProperty][0].ToString() : string.Empty
-            };
-        }
+                row[map.i] = GetProperty(result, map.SourceField);
+            }
 
-        private static string ConvertToSidString(byte[] bytes)
-        {
-            return new SecurityIdentifier(bytes, 0).Value.ToUpper(CultureInfo.CurrentCulture);
+            return row;
         }
 
         #endregion

@@ -84,7 +84,7 @@
 //            return samAccountName.ToUpper(CultureInfo.CurrentCulture);
 //        }
 
-//        public static string GetMembershipKey(ImportableUser importUser)
+//        public static string GetMembershipKey(ImportableStudent importUser)
 //        {
 //            switch (SecurityHelper.MembershipType)
 //            {

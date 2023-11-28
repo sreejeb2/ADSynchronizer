@@ -26,11 +26,17 @@ namespace ADSynchronizer
 
         public string Decrypt(string encryptedValue)
         {
+            if (string.IsNullOrEmpty(encryptedValue))
+                return string.Empty;
+
             return Encryption.DecryptData(encryptedValue);
         }
 
         public string Encrypt(string value)
         {
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
             return Encryption.EncryptData(value);
         }
     }

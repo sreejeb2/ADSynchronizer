@@ -5,6 +5,8 @@ VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ADSynchronizer", "ADSynchronizer\ADSynchronizer.csproj", "{4592FFF4-A8F6-46F9-95B0-347BD7D874DA}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "ADSynchronizer.Setup", "ADSynchronizer.Setup\ADSynchronizer.Setup.vdproj", "{842E1F4C-5F08-4869-9690-AEA7B40D881C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{4592FFF4-A8F6-46F9-95B0-347BD7D874DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4592FFF4-A8F6-46F9-95B0-347BD7D874DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4592FFF4-A8F6-46F9-95B0-347BD7D874DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{842E1F4C-5F08-4869-9690-AEA7B40D881C}.Debug|Any CPU.ActiveCfg = Debug
+		{842E1F4C-5F08-4869-9690-AEA7B40D881C}.Debug|Any CPU.Build.0 = Debug
+		{842E1F4C-5F08-4869-9690-AEA7B40D881C}.Release|Any CPU.ActiveCfg = Release
+		{842E1F4C-5F08-4869-9690-AEA7B40D881C}.Release|Any CPU.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

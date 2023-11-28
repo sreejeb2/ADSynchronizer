@@ -35,11 +35,15 @@ namespace ADSynchronizer
         public string ConnectionString { get; set; }
         public string UserName { get; set; }
         public string EncryptedPassword { get; set; }
+        public string Filter { get; set; }
     }
 
     public class DestinationDBDetails
     {
-        public string ConnectionString { get; set; }
+        public string Server { get; set; }
+        public string DBName { get; set; }
+        public string UserName { get; set; }
+        public string EncryptedPassword { get; set; }
     }
 
     public class Mapping

@@ -8,12 +8,31 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <Version>1.1.0.0</Version>
+    <AssemblyVersion>1.1.0.*</AssemblyVersion>
+    <Deterministic>false</Deterministic>
+    <ApplicationIcon>ADSynchronizer.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Content Include="ADSynchronizer.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.151" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
+    <PackageReference Include="MySqlConnector" Version="2.2.7" />
     <PackageReference Include="NLog" Version="5.2.3" />
     <PackageReference Include="NLog.Extensions.Logging" Version="5.3.3" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
 
@@ -32,6 +51,7 @@
     <None Update="nlog.config">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>nlog.Designer.cs</LastGenOutput>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

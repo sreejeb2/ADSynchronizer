@@ -2,10 +2,13 @@
 	"Source": {
 		"ConnectionString": "LDAP://ldap.forumsys.com:389/dc=example,dc=com",
 		"UserName": "cn=read-only-admin,dc=example,dc=com",
-		"EncryptedPassword": "password"
+		"EncryptedPassword": "CupMsrzDN1FBD\u002ByjXo0Gzg=="
 	},
 	"Destination": {
-		"ConnectionString": "LDAP://ldap.forumsys.com:389/dc=example,dc=com"
+		"Server": "127.0.0.1,3306",
+		"DBName": "lockers",
+		"UserName": "root",
+		"EncryptedPassword": "yZHwNK0FptV6TrXtrPcWjA=="
 	},
 	"ADProperties": [
 		"cn",
