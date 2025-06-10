@@ -22,6 +22,8 @@ namespace ADSynchronizer
                 _encryptionService = encryptionService;
 
                 InitializeComponent();
+                tcSync.SizeMode = TabSizeMode.Fixed;
+                tcSync.ItemSize = new Size((tcSync.Width / tcSync.TabPages.Count) - 10, 40);
 
                 InitSettings();
                 InitForm();
@@ -287,27 +289,27 @@ namespace ADSynchronizer
             }
         }
 
-        private void btnADFillUser_Click(object sender, EventArgs e)
-        {
-            var adUserName = string.IsNullOrEmpty(_settings.Source.UserName) ? null : _settings.Source.UserName;
-            var adUserPassword = string.IsNullOrEmpty(_settings.Source.EncryptedPassword) ? null : _encryptionService.Decrypt(_settings.Source.EncryptedPassword);
-            var testADUser = txtADUser.Text.Trim();
+        //private void btnADFillUser_Click(object sender, EventArgs e)
+        //{
+        //    var adUserName = string.IsNullOrEmpty(_settings.Source.UserName) ? null : _settings.Source.UserName;
+        //    var adUserPassword = string.IsNullOrEmpty(_settings.Source.EncryptedPassword) ? null : _encryptionService.Decrypt(_settings.Source.EncryptedPassword);
+        //    var testADUser = txtADUser.Text.Trim();
 
-            try
-            {
-                _settings.ADProperties = ActiveDirectoryUtility.SearchAllPropFromUser(_settings.Source.ConnectionString, adUserName, adUserPassword, testADUser).ToList();
-                SaveSettings(_settings);
-                ReloadForm();
+        //    try
+        //    {
+        //        _settings.ADProperties = ActiveDirectoryUtility.SearchAllPropFromUser(_settings.Source.ConnectionString, adUserName, adUserPassword, testADUser).ToList();
+        //        SaveSettings(_settings);
+        //        ReloadForm();
 
-                ShowSuccessfulMessage("Successfully synchronized AD properties");
-            }
-            catch (Exception ex)
-            {
-                ShowErrorMessage(ex.Message);
+        //        ShowSuccessfulMessage("Successfully synchronized AD properties");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ShowErrorMessage(ex.Message);
 
-                Logger.Error(ex, $"Exception getting AD properties for user: {testADUser}");
-            }
-        }
+        //        Logger.Error(ex, $"Exception getting AD properties for user: {testADUser}");
+        //    }
+        //}
 
         private void btnDeleteMapping_Click(object sender, EventArgs e)
         {
@@ -495,7 +497,7 @@ namespace ADSynchronizer
 
                 PercentProgress = 0;
                 ReportProgress("Started reading AD data");
-                var result = ad.GetAllUsers(_settings.Mappings);
+                var result = ad.GetAllUsers(_settings.Mappings, _settings.Source.Filter);
                 ReportProgress($"Completed reading AD data, got {result?.Values.Count ?? 0} users");
 
                 if (result?.Count() > 0)

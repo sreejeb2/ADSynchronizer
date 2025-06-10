@@ -40,6 +40,7 @@ namespace ADSynchronizer
             }
             else
             {
+                Application.EnableVisualStyles();
                 Application.Run(ServiceProvider.GetRequiredService<frmSyncSettings>());
             }
         }

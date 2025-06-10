@@ -18,7 +18,7 @@ namespace ADSynchronizer
                 using var ad = new ActiveDirectoryUtility(settings.Source.ConnectionString, adUserName, adUserPassword);
 
                 AuditLogger.Info("Scheduler: Started reading AD data");
-                var result = ad.GetAllUsers(settings.Mappings);
+                var result = ad.GetAllUsers(settings.Mappings, settings.Source.Filter);
                 AuditLogger.Info($"Scheduler: Completed reading AD data, got {result?.Values.Count ?? 0} users");
 
                 if (result?.Count() > 0)
