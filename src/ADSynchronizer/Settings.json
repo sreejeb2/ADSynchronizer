@@ -5,6 +5,7 @@
 		"EncryptedPassword": "CupMsrzDN1FBD\u002ByjXo0Gzg=="
 	},
 	"Destination": {
+		"DBType": "mySql",
 		"Server": "127.0.0.1,3306",
 		"DBName": "lockers",
 		"UserName": "root",

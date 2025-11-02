@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ADSynchronizer
 {
@@ -20,13 +16,25 @@ namespace ADSynchronizer
             {
                 throw new ArgumentNullException("syncSettings");
             }
-                        
-            return JsonSerializer.Deserialize<SyncSettings>(syncSettings);
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+            };
+
+            return JsonSerializer.Deserialize<SyncSettings>(syncSettings, options);
         }
 
         public string Serialize()
         {
-            return JsonSerializer.Serialize(this);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+            };
+
+            return JsonSerializer.Serialize(this, options);
         }
     }
 
@@ -40,6 +48,7 @@ namespace ADSynchronizer
 
     public class DestinationDBDetails
     {
+        public DataAccess.DBType DBType { get; set; }
         public string Server { get; set; }
         public string DBName { get; set; }
         public string UserName { get; set; }

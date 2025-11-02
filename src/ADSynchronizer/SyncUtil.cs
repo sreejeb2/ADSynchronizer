@@ -68,11 +68,11 @@ namespace ADSynchronizer
             return string.Empty;
         }
 
-        public static void SyncDB(string dbConnectionString, KeyValuePair<string, Dictionary<string, string>> studentADData, Action<string> reportProgress)
+        public static void SyncDB(string dbConnectionString, DataAccess.DBType dbType, KeyValuePair<string, Dictionary<string, string>> studentADData, Action<string> reportProgress)
         {
             try
             {
-                var dataAccess = new DataAccess(dbConnectionString);
+                var dataAccess = new DataAccess(dbType, dbConnectionString);
 
                 if (studentADData.Value.ContainsKey(nameof(ImportableStudent.Department_Id)))
                 {

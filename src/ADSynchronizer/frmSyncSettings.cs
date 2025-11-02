@@ -182,7 +182,7 @@ namespace ADSynchronizer
             {
                 AuditLogger.Trace($"Verified DB connection: {txtDBServer.Text},{txtDBName.Text} using {txtDBUser.Text}:{txtDBPassword.Text}");
 
-                if (DataAccess.TestConnectionToDBServer(dbConnectionString))
+                if (DataAccess.TestConnectionToDBServer(_settings.Destination.DBType, dbConnectionString))
                 {
                     ShowSuccessfulMessage("Successfully connected to database server");
                 }
@@ -207,7 +207,7 @@ namespace ADSynchronizer
             }
             else
             {
-                if (DataAccess.TestConnectionToDBServer(dbConnectionString))
+                if (DataAccess.TestConnectionToDBServer(_settings.Destination.DBType, dbConnectionString))
                 {
                     _settings.Destination = new DestinationDBDetails
                     {
@@ -398,7 +398,7 @@ namespace ADSynchronizer
                 {
                     var studentADData = result.First();
 
-                    SyncUtil.SyncDB(SyncUtil.DBConnectionString(_settings, _encryptionService), studentADData, UpdateProgress);
+                    SyncUtil.SyncDB(SyncUtil.DBConnectionString(_settings, _encryptionService), _settings.Destination.DBType, studentADData, UpdateProgress);
 
                     UpdateProgress($"Sucessfully synchronized {adSyncUser}, with {studentADData.Value.Values?.Count ?? 0} properties");
                 }
@@ -515,13 +515,13 @@ namespace ADSynchronizer
                         }
 
                         PercentProgress += studentADData.i / result.Values.Count * 40;
-                        SyncUtil.SyncDB(dbConnectionString, studentADData.user, (m) => ReportProgress(m, 0));
+                        SyncUtil.SyncDB(dbConnectionString, _settings.Destination.DBType, studentADData.user, (m) => ReportProgress(m, 0));
                     }
                     
                     ReportProgress($"Completed sync to DB");
 
                     ReportProgress($"Started deactivating users");
-                    var dataAccess = new DataAccess(dbConnectionString);
+                    var dataAccess = new DataAccess(_settings.Destination.DBType, dbConnectionString);
                     dataAccess.DeactivateUsers(result.Keys.ToList());
                     PercentProgress = 100;
                     ReportProgress($"Completed deactivating users");

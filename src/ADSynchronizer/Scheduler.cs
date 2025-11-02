@@ -28,13 +28,13 @@ namespace ADSynchronizer
 
                     foreach (var studentADData in result.Select((user, i) => new { i, user }))
                     {
-                        SyncUtil.SyncDB(dbConnectionString, studentADData.user, (m) => AuditLogger.Info(m));
+                        SyncUtil.SyncDB(dbConnectionString, settings.Destination.DBType, studentADData.user, (m) => AuditLogger.Info(m));
                     }
 
                     AuditLogger.Info($"Scheduler: Completed sync to DB");
 
                     AuditLogger.Info($"Scheduler: Started deactivating users");
-                    var dataAccess = new DataAccess(dbConnectionString);
+                    var dataAccess = new DataAccess(settings.Destination.DBType, dbConnectionString);
                     dataAccess.DeactivateUsers(result.Keys.ToList());
                     AuditLogger.Info($"Completed deactivating users");
                 }
