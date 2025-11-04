@@ -1,5 +1,6 @@
 using NLog;
 using System.ComponentModel;
+using System.DirectoryServices;
 using System.Reflection;
 
 namespace ADSynchronizer

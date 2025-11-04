@@ -16,6 +16,7 @@ namespace ADSynchronizer
         private static readonly Logger AuditLogger = LogManager.GetLogger("AuditLog");
 
         private const string LdapProtocolBase = "LDAP://";
+        private const string BaseFilter = "(objectClass=*)";
         private const string BaseGroupFilter = "(&(objectCategory=group)(cn={0}))";
         private const string BaseGroupSidFilter = "(&(objectCategory=group)(objectsid={0}))";
         private const string BaseFindUsersFilter = "(&(objectCategory=person)(objectClass=user)(anr={0}))";
@@ -266,7 +267,7 @@ namespace ADSynchronizer
         private static string GetAllUsersFilter(string? adFilter)
         {
             return string.IsNullOrEmpty(adFilter)
-                ? BaseListAllUsersFilter
+                ? BaseFilter
                 : GetFilteredUsersFilter(adFilter);
         }
 
